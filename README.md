@@ -48,3 +48,7 @@ I used one of my old Raspberry Pis and connected to the panel successfully using
 
 - the USB to RS232 serial port in Linux is a USB one e.g. to `/dev/ttyUSB0`
 - UART0 serial port in Linux is `/dev/serial0`
+
+## Installed
+
+![image](installed.png)

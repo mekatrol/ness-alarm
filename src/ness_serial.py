@@ -18,6 +18,9 @@ SB_BASIC_HEADER = 0x02  # According to spec, this bit is always set in the start
 SB_TIME_STAMP = 0x04  # Set if the time stamp is included in the message
 SB_ASCII = 0x80  # According to spec, this bit is always set in the start byte
 
+# USB serial '/dev/ttyUSB0'
+# UART 0 serial '/dev/serial0'
+
 uart = serial.Serial("/dev/ttyUSB0", baudrate=9600, timeout=3.0)
 
 

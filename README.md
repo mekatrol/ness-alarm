@@ -40,11 +40,11 @@ I obtained the NESS panel cable on ebay.com.au from reseller *mw-security* using
 ### RS232
 
 - USB Serial Cable with PL2303 Chipset USB to RS232 DB9 9 Pin Male Adapter [Amazon.com.au](https://amazon.com.au)
-- JAYCAR Arduino Compatible RS-232 to TTL UART Converter Module (XC3724) - this one requires a null modem cable between Alarm and the RS232 module, but this coule depend on the actual cable plugged into NESS alarm and how pins 2 & 3 on the DB9 are connected.
+- JAYCAR Arduino Compatible RS-232 to TTL UART Converter Module (XC3724) - this one requires a null modem cable between Alarm and the RS232 module, but this could depend on the actual cable plugged into NESS alarm and how pins 2 & 3 on the DB9 are connected.
 
 ### Controller
 
-I used one of my old Raspberry Pis and connected to the panel using either:
+I used one of my old Raspberry Pis and connected to the panel successfully usingboth of:
 
 - the USB to RS232 serial port in Linux is a USB one e.g. to `/dev/ttyUSB0`
 - UART0 serial port in Linux is `/dev/serial0`

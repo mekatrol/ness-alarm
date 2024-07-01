@@ -1,0 +1,18 @@
+# NOTE: if you create a file named config.debug.yaml then the configuration settings in that file
+#       will override the configuration settings in this file. Because config.debug.yaml is
+#       GIT ignored then you can add sensitive settings (e.g. passwords, tokens, etc) to that file
+#       without concern for committing the sensitive information.
+#
+#       You only need to define the values that you want to override. You do not need to repeat any
+#       configuration setting values here that are not different.
+
+logging:
+  file-name: "log.txt"
+  level: "INFO"
+
+mqtt:
+  host: "homeassistant.lan"
+  port: 1883
+  user: "<insert user name here>"
+  password: "<insert password here>"
+      

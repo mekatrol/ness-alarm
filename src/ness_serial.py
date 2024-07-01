@@ -48,7 +48,7 @@ def init_mqtt(config):
     mqttc.username_pw_set(
         username=config["mqtt"]["user"], password=config["mqtt"]["password"]
     )
-    mqttc.connect(["mqtt"]["host"], ["mqtt"]["port"])
+    mqttc.connect(config["mqtt"]["host"], config["mqtt"]["port"])
     mqttc.loop_start()
 
 
@@ -125,7 +125,7 @@ def checksum(message) -> tuple[int, int]:
 
 def post_mqtt_status(area, zone, event):
     msg_info = mqttc.publish(
-        "ness/status",
+        f"ness/status/{zone}",
         f'{{ "type": "status", "area": {area}, "zone": {zone}, "event": "{ event_type_name(event) }" }}',
         qos=1,
     )

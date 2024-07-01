@@ -4,13 +4,13 @@
 
 Example communication with NESS alarm DX8/DX16 panels. Taken from the NESS website link [D8x/D16x ASCII Protocol Rev13](https://drive.google.com/file/d/1vl8Gs1GY-gKAPSiU8yjCzrgQxm8ybhQh/view?usp=sharing).
 
-The was found by navigating to [ness.com.au](https://ness.com.au) -> support -> Security Alarm Panels -> Ness Control Panel Software and on that page there is a link to the protocol `D8x/D16x ASCII Protocol Rev13` (which seems to be hosted on a Goolge drive).
+The was found by navigating to [ness.com.au](https://ness.com.au) -> support -> Security Alarm Panels -> Ness Control Panel Software and on that page there is a link to the protocol `D8x/D16x ASCII Protocol Rev13` (which seems to be hosted on a Google drive).
 
 A [copy](./Ness_D8-D16_ASCII_protocol_rev13.pdf) is included in this repo for easy reference.
 
 ## Configuring the panel
 
-To enable communications the following isntaller options need to be set:
+To enable communications the following installer options need to be set:
 
 - P90E 1E - Enable Remote Access
 - P90E 7E - Will send regular event updates, e.g. `b'820003601700877d'`
@@ -35,7 +35,7 @@ D16x V6 and later.)
 
 ### NESS cable
 
-I obtained the NESS panel cable on ebay.com.au from reseller *mw-security* using search term 'NESS IP ETHERNET MODULE IP232 SERIAL LEAD 3 4 WAY DB9 RS232 Programing cable'.
+I obtained the NESS panel cable on ebay.com.au from reseller *mw-security* using search term 'NESS IP ETHERNET MODULE IP232 SERIAL LEAD 3 4 WAY DB9 RS232 Programming cable'.
 
 ### RS232
 
@@ -44,7 +44,7 @@ I obtained the NESS panel cable on ebay.com.au from reseller *mw-security* using
 
 ### Controller
 
-I used one of my old Raspberry Pis and connected to the panel successfully usingboth of:
+I used one of my old Raspberry Pis and connected to the panel successfully using both of:
 
 - the USB to RS232 serial port in Linux is a USB one e.g. to `/dev/ttyUSB0`
 - UART0 serial port in Linux is `/dev/serial0`

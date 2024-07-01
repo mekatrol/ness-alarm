@@ -89,16 +89,16 @@ while True:
     # if there was no data available then the len of utf8_message will be zero,
     # however we also need a message of at least 8 characters long to get the
     if len(utf8_message) >= 8:
-        # we can convert to python unicode string and strip trainling CRLF
+        # we can convert to python unicode string and strip trailing CRLF
         unicode_message = utf8_message.decode().rstrip()
 
-        # rxed checksum (is the last two characters of the message)
+        # received checksum (is the last two characters of the message)
         rxd_checksum = unicode_message[-2:]
 
         # message is everything except checksum
         message = unicode_message[:-2]
 
-        # calculate the checksum for the recieved message
+        # calculate the checksum for the received message
         message_type, calculated_checksum = checksum(message)
 
         # make sure message type was valid

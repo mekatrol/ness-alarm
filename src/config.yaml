@@ -15,4 +15,9 @@ mqtt:
   port: 1883
   user: "<insert user name here>"
   password: "<insert password here>"
+
+serial:
+  device: "/dev/ttyUSB0"
+  baud_rate: 9600
+  zones: 8
       

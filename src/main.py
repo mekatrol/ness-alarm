@@ -83,9 +83,10 @@ async def main():
 
         alarm_task = asyncio.create_task(alarm_loop(alarm_panel))
         monitor_task = asyncio.create_task(monitor_loop(mqtt, alarm_panel))
+        state_changed_task = asyncio.create_task(state_changed_loop(mqtt, alarm_panel))
 
         # Loop forever
-        await asyncio.wait([alarm_task, monitor_task])
+        await asyncio.wait([alarm_task, monitor_task, state_changed_task])
     except Exception as e:
         logging.error("Error at %s", exc_info=e)
     finally:

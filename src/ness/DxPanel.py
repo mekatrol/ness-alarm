@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import serial
 
 # Message types
@@ -47,7 +48,8 @@ class AlarmZone:
 
 class DxPanel:
     def __init__(self, serial_port, baud_rate, zone_count: int):
-        self.uart = serial.Serial(serial_port, baudrate=baud_rate, timeout=3.0)
+        self.logger = logging.getLogger(__name__)
+        self.uart = serial.Serial(serial_port, baudrate=baud_rate, timeout=0.1)
         self.zones = []
         self.state_changed = False
 
@@ -172,13 +174,15 @@ class DxPanel:
                         message[MP_MESSAGE_EVENT_BEGIN:MP_MESSAGE_EVENT_END], 16
                     )
                     area = int(message[MP_MESSAGE_AREA_BEGIN:MP_MESSAGE_AREA_END], 16)
-                    zone = int(message[MP_MESSAGE_ZONE_BEGIN:MP_MESSAGE_ZONE_END], 16)
+                    zone_index = int(message[MP_MESSAGE_ZONE_BEGIN:MP_MESSAGE_ZONE_END], 16)
 
                     # Update valid zones
-                    if zone > 0 and zone <= len(self.zones):
-                        if self.zones[zone - 1].state != state:
+                    if zone_index > 0 and zone_index <= len(self.zones):                        
+                        zone = self.zones[zone_index - 1]
+                        if zone.state != state:
+                            self.logger.debug(f"Zone '{zone.name}' changed to '{self.event_type_name(state)}' from '{self.event_type_name(zone.state)}'")
                             # Signal that state changed
                             self.state_changed = True
 
-                        self.zones[zone - 1].area = area
-                        self.zones[zone - 1].state = state
+                        zone.area = area
+                        zone.state = state

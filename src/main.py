@@ -67,9 +67,9 @@ async def main():
         config = await configHelper.read()
 
         # Configure logging
-        log_levels = logging.getLevelNamesMapping()
-        log_level = log_levels[config["logging"]["level"]]
-        logging.basicConfig(filename=config["logging"]["file-name"], level=log_level)
+        # log_levels = logging.getLevelNamesMapping()
+        # log_level = log_levels[config["logging"]["level"]]
+        logging.basicConfig(filename=config["logging"]["file-name"], level="DEBUG")
 
         mqtt = init_mqtt(config)
 
@@ -94,4 +94,8 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+        asyncio.run(asyncio.sleep(5))
+    except Exception as ex:
+        logger.error(f"Exec error: '{ex}'")

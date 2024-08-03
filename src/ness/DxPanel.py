@@ -29,6 +29,11 @@ SB_BASIC_HEADER = 0x02  # According to spec, this bit is always set in the start
 SB_TIME_STAMP = 0x04  # Set if the time stamp is included in the message
 SB_ASCII = 0x80  # According to spec, this bit is always set in the start byte
 
+# General states
+ST_ARMED_AWAY = 0x24
+ST_ARMED_HOME = 0x25
+ST_DISARMED = 0x2F
+
 # Zone states
 ZS_UNSEALED = 0x00
 ZS_SEALED = 0x01
@@ -50,6 +55,8 @@ class DxPanel:
     def __init__(self, serial_port, baud_rate, zone_count: int):
         self.logger = logging.getLogger(__name__)
         self.uart = serial.Serial(serial_port, baudrate=baud_rate, timeout=0.1)
+        self.armed = False
+        self.alarmed = False
         self.zones = []
         self.state_changed = False
 
@@ -84,7 +91,15 @@ class DxPanel:
             return "EVT_MANUAL_EXCLUDE"
         if event_type == ZS_MANUAL_INCLUDE:
             return "EVT_MANUAL_INCLUDE"
-        return "EVT_UNKNOWN"
+        if event_type == ZS_MANUAL_INCLUDE:
+            return "EVT_MANUAL_INCLUDE"
+        if event_type == ST_ARMED_AWAY:
+            return "ST_ARMED_AWAY"
+        if event_type == ST_ARMED_HOME:
+            return "ST_ARMED_HOME"
+        if event_type == ST_DISARMED:
+            return "ST_DISARMED"
+        return f"EVT_UNKNOWN: {event_type}"
 
     # Simple helper to get start bit strings from start byte
     def start_bits(self, start) -> str:
@@ -127,6 +142,18 @@ class DxPanel:
 
         # Unknown message type so just return zero checksum
         return [MT_UNKNOWN, 0x00]
+    
+    def alarmed_state(self) -> bool:
+        # Default to not in alarm
+        alarmed = False
+        
+        # Check if any zone in alarm
+        for zone in self.zones:
+            if zone.state == ZS_ALARM:
+                alarmed = True
+                
+        # Return alarm state
+        return alarmed
 
     async def loop(self):
         while True:
@@ -167,22 +194,45 @@ class DxPanel:
                 if message_type == MT_UNKNOWN:
                     # Do not process any further
                     continue
-
+                
                 # For status messages then publish a MQTT event
                 if message_type == MT_SYSTEM_STATUS:
-                    state = int(
+                    event_type = int(
                         message[MP_MESSAGE_EVENT_BEGIN:MP_MESSAGE_EVENT_END], 16
                     )
+
+                    if event_type == ST_ARMED_AWAY or event_type == ST_ARMED_HOME:
+                        self.logger.debug(f"Armed changed to '{self.event_type_name(message_type)}'")
+                        
+                        self.armed = True
+                        
+                        # Signal that state changed
+                        self.state_changed = True
+                        
+                        continue
+                
+                    if event_type == ST_DISARMED:
+                        self.logger.debug(f"Armed changed to '{self.event_type_name(message_type)}'")
+                        
+                        self.armed = False
+                        
+                        # Signal that state changed
+                        self.state_changed = True
+                        
+                        continue                    
+                                                            
                     area = int(message[MP_MESSAGE_AREA_BEGIN:MP_MESSAGE_AREA_END], 16)
                     zone_index = int(message[MP_MESSAGE_ZONE_BEGIN:MP_MESSAGE_ZONE_END], 16)
 
                     # Update valid zones
                     if zone_index > 0 and zone_index <= len(self.zones):                        
                         zone = self.zones[zone_index - 1]
-                        if zone.state != state:
-                            self.logger.debug(f"Zone '{zone.name}' changed to '{self.event_type_name(state)}' from '{self.event_type_name(zone.state)}'")
+                        if zone.state != event_type:
+                            self.logger.debug(f"Zone '{zone.name}' changed to '{self.event_type_name(event_type)}' from '{self.event_type_name(zone.state)}'")
                             # Signal that state changed
                             self.state_changed = True
 
                         zone.area = area
-                        zone.state = state
+                        zone.state = event_type
+                        
+                    continue

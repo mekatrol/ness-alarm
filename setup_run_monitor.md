@@ -44,29 +44,13 @@ logging:
 mqtt:
   host: "homeassistant.lan"
   port: 1883
-  user: "<insert user name here>"
-  password: "<insert password here>"
+  user: "<insert mqtt user name here>"
+  password: "<insert mqtt password here>"
 
 serial:
   device: "/dev/ttyUSB0"
   baud_rate: 9600
   zones: 8      
-```
-
-### Create start shell script
-
-```bash
-cd ~/
-nano alarm_monitor_start.sh
-```
-
-### Paste script content
-
-```bash
-cd /home/pi/repos/ness-alarm/src/
-source ./venv/bin/activate
-python3 ./main.py
-cd ~/
 ```
 
 ### Create service file
@@ -79,15 +63,16 @@ sudo nano /lib/systemd/system/alarm_monitor.service
 
 ```ini
 [Unit]
-Description=Alarm Monitor
-After=multi-user.target
+Description=Alarm Monitor Service
+Wants=network-online.target
+After=network.target network-online.target
 
 [Service]
-Type=simple
-ExecStart=/bin/bash /home/pi/run_alarm_monitor.sh
-Restart=on-abort
 User=pi
-Group=pi
+ExecStartPre=/bin/sleep 60
+ExecStart=/usr/bin/python3 /home/pi/repos/ness-alarm/src/main.py
+WorkingDirectory=/home/pi/repos/ness-alarm/src
+Restart=on-abort
 
 [Install]
 WantedBy=multi-user.target

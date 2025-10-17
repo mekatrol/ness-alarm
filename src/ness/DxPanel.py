@@ -91,8 +91,6 @@ class DxPanel:
             return "EVT_MANUAL_EXCLUDE"
         if event_type == ZS_MANUAL_INCLUDE:
             return "EVT_MANUAL_INCLUDE"
-        if event_type == ZS_MANUAL_INCLUDE:
-            return "EVT_MANUAL_INCLUDE"
         if event_type == ST_ARMED_AWAY:
             return "ST_ARMED_AWAY"
         if event_type == ST_ARMED_HOME:
@@ -141,23 +139,19 @@ class DxPanel:
             return (message_type, self.event_checksum(message))
 
         # Unknown message type so just return zero checksum
-<<<<<<< HEAD
         return (MT_UNKNOWN, 0x00)
-=======
-        return [MT_UNKNOWN, 0x00]
-    
+
     def alarmed_state(self) -> bool:
         # Default to not in alarm
         alarmed = False
-        
+
         # Check if any zone in alarm
         for zone in self.zones:
             if zone.state == ZS_ALARM:
                 alarmed = True
-                
+
         # Return alarm state
         return alarmed
->>>>>>> 113f76a38b5d440b8edb6bcaabc049e93a599f1b
 
     async def loop(self):
         while True:
@@ -198,7 +192,7 @@ class DxPanel:
                 if message_type == MT_UNKNOWN:
                     # Do not process any further
                     continue
-                
+
                 # For status messages then publish a MQTT event
                 if message_type == MT_SYSTEM_STATUS:
                     event_type = int(
@@ -206,25 +200,29 @@ class DxPanel:
                     )
 
                     if event_type == ST_ARMED_AWAY or event_type == ST_ARMED_HOME:
-                        self.logger.debug(f"Armed changed to '{self.event_type_name(message_type)}'")
-                        
+                        self.logger.debug(
+                            f"Armed changed to '{self.event_type_name(message_type)}'"
+                        )
+
                         self.armed = True
-                        
+
                         # Signal that state changed
                         self.state_changed = True
-                        
+
                         continue
-                
+
                     if event_type == ST_DISARMED:
-                        self.logger.debug(f"Armed changed to '{self.event_type_name(message_type)}'")
-                        
+                        self.logger.debug(
+                            f"Armed changed to '{self.event_type_name(message_type)}'"
+                        )
+
                         self.armed = False
-                        
+
                         # Signal that state changed
                         self.state_changed = True
-                        
-                        continue                    
-                                                            
+
+                        continue
+
                     area = int(message[MP_MESSAGE_AREA_BEGIN:MP_MESSAGE_AREA_END], 16)
                     zone_index = int(
                         message[MP_MESSAGE_ZONE_BEGIN:MP_MESSAGE_ZONE_END], 16
@@ -233,19 +231,12 @@ class DxPanel:
                     # Update valid zones
                     if zone_index > 0 and zone_index <= len(self.zones):
                         zone = self.zones[zone_index - 1]
-<<<<<<< HEAD
-                        if zone.state != state:
-                            self.logger.debug(
-                                f"Zone '{zone.name}' changed to '{self.event_type_name(state)}' from '{self.event_type_name(zone.state)}'"
-                            )
-=======
                         if zone.state != event_type:
-                            self.logger.debug(f"Zone '{zone.name}' changed to '{self.event_type_name(event_type)}' from '{self.event_type_name(zone.state)}'")
->>>>>>> 113f76a38b5d440b8edb6bcaabc049e93a599f1b
+                            self.logger.debug(
+                                f"Zone '{zone.name}' changed to '{self.event_type_name(event_type)}' from '{self.event_type_name(zone.state)}'"
+                            )
                             # Signal that state changed
                             self.state_changed = True
 
                         zone.area = area
                         zone.state = event_type
-                        
-                    continue

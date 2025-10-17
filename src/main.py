@@ -18,7 +18,6 @@ MQTT_TOPIC_STATUS_ALARMED = "ness/status/alarmed_status"
 MQTT_TOPIC_STATUS_ZONE = "ness/status/{zone}"
 
 
-<<<<<<< HEAD
 class ResilientMQTT:
     def __init__(
         self,
@@ -161,95 +160,50 @@ class ResilientMQTT:
         return self._c.is_connected()
 
 
-def post_mqtt_zone_status(mqttc: ResilientMQTT, area: int, zone: int, event: str):
-    mqttc.publish(
+def post_mqtt_zone_status(mqtt: ResilientMQTT, area: int, zone: int, event: str):
+    mqtt.publish(
         f"{MQTT_TOPIC_STATUS_ZONE.format(zone=zone)}",
         f'{{"type":"status","area":{area},"zone":{zone},"event":"{event}"}}',
-=======
-def post_mqtt_zone_status(mqttc: mqtt.Client, area: int, zone: int, event: str):
-    msg_info = mqttc.publish(
-        f"ness/status/{zone}",
-        f'{{ "type": "status", "area": {area}, "zone": {zone}, "event": "{ event }" }}',
->>>>>>> 113f76a38b5d440b8edb6bcaabc049e93a599f1b
         qos=1,
     )
 
 
-<<<<<<< HEAD
-def post_mqtt_armed_status(mqttc: ResilientMQTT, event: str):
-    mqttc.publish(
+def post_mqtt_armed_status(mqtt: ResilientMQTT, event: str):
+    mqtt.publish(
         MQTT_TOPIC_STATUS_ARMED,
         f'{{"type":"status","event":"{event}"}}',
         qos=1,
     )
 
 
-def post_mqtt_alarmed_status(mqttc: ResilientMQTT, event: str):
-    mqttc.publish(
+def post_mqtt_alarmed_status(mqtt: ResilientMQTT, event: str):
+    mqtt.publish(
         MQTT_TOPIC_STATUS_ALARMED,
-        f'{{"type":"status","event":"{event}"}}',
+        f'{{ "type": "status", "event":"{event}" }}',
         qos=1,
     )
 
 
-def post_alarm_update(mqttc: ResilientMQTT, alarm_panel: DxPanel):
-    for zone in alarm_panel.zones:
-        post_mqtt_zone_status(
-            mqttc, zone.area, zone.number, alarm_panel.event_type_name(zone.state)
-        )
-
-
-async def state_changed_loop(mqttc: ResilientMQTT, alarm_panel: DxPanel):
-    while True:
-        if alarm_panel.read_and_clear_state_change():
-            post_alarm_update(mqttc, alarm_panel)
-        await asyncio.sleep(0.1)
-
-
-async def monitor_loop(mqttc: ResilientMQTT, alarm_panel: DxPanel):
-    while True:
-        post_alarm_update(mqttc, alarm_panel)
-=======
-def post_mqtt_armed_status(mqttc: mqtt.Client, event: str):
-    msg_info = mqttc.publish(
-        f"ness/status/armed_status",
-        f'{{ "type": "status", "event": "{ event }" }}',
-        qos=1,
-    )
-    unacked_publish = set()
-    unacked_publish.add(msg_info.mid)
-    msg_info.wait_for_publish()
-    
-def post_mqtt_alarmed_status(mqttc: mqtt.Client, event: str):
-    msg_info = mqttc.publish(
-        f"ness/status/alarmed_status",
-        f'{{ "type": "status", "event": "{ event }" }}',
-        qos=1,
-    )
-    unacked_publish = set()
-    unacked_publish.add(msg_info.mid)
-    msg_info.wait_for_publish()
-
-def post_alarm_update(mqtt: mqtt.Client, alarm_panel: DxPanel):
+def post_alarm_update(mqtt: ResilientMQTT, alarm_panel: DxPanel):
     event = "unarmed"
-    if alarm_panel.armed == True:
+    if alarm_panel.armed:
         event = "armed"
-    
+
     post_mqtt_armed_status(mqtt, event)
 
     event = "notalarmed"
-    if alarm_panel.alarmed_state() == True:
+    if alarm_panel.alarmed_state():
         event = "alarmed"
-    
-    post_mqtt_alarmed_status(mqtt, event)
 
+    post_mqtt_alarmed_status(mqtt, event)
     for zone in alarm_panel.zones:
-        event_type_name = alarm_panel.event_type_name(zone.state)
-        post_mqtt_zone_status(mqtt, zone.area, zone.number, event_type_name)
+        post_mqtt_zone_status(
+            mqtt, zone.area, zone.number, alarm_panel.event_type_name(zone.state)
+        )
 
 
 # Post state change events as soon as they occur
-async def state_changed_loop(mqtt: mqtt.Client, alarm_panel: DxPanel):
+async def state_changed_loop(mqtt: ResilientMQTT, alarm_panel: DxPanel):
     while True:
         if alarm_panel.read_and_clear_state_change():
             post_alarm_update(mqtt, alarm_panel)
@@ -259,12 +213,11 @@ async def state_changed_loop(mqtt: mqtt.Client, alarm_panel: DxPanel):
 
 
 # Post state change events periodically
-async def monitor_loop(mqtt: mqtt.Client, alarm_panel: DxPanel):
+async def monitor_loop(mqtt: ResilientMQTT, alarm_panel: DxPanel):
     while True:
         post_alarm_update(mqtt, alarm_panel)
 
         # This is just a keep alive message so can sleep for 10 seconds
->>>>>>> 113f76a38b5d440b8edb6bcaabc049e93a599f1b
         await asyncio.sleep(10)
 
 
@@ -273,48 +226,61 @@ async def alarm_loop(alarm_panel: DxPanel):
 
 
 async def main():
-    # Read config
-    configHelper = YamlConfigurationHelper("config.yaml", "config.debug.yaml")
-    config = await configHelper.read()
+    try:
+        # Read configuration
+        configHelper = YamlConfigurationHelper("config.yaml", "config.debug.yaml")
+        config = await configHelper.read()
 
-    # Logging with size-based rotation
-    root = logging.getLogger()
-    root.setLevel(logging.DEBUG)
-    root.handlers.clear()
-    handler = RotatingFileHandler(
-        filename=config["logging"]["file-name"],
-        maxBytes=config["logging"].get("max-bytes", 5 * 1024 * 1024),  # 5 MB default
-        backupCount=config["logging"].get("backup-count", 3),  # keep 3 backups
-        encoding="utf-8",
-    )
-    handler.setFormatter(
-        logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-    )
-    root.addHandler(handler)
+        # Logging with size-based rotation
+        root = logging.getLogger()
+        root.setLevel(logging.DEBUG)
+        root.handlers.clear()
+        handler = RotatingFileHandler(
+            # Configure logging
+            # log_levels = logging.getLevelNamesMapping()
+            # log_level = log_levels[config["logging"]["level"]]
+            filename=config["logging"]["file-name"],
+            maxBytes=config["logging"].get(
+                "max-bytes", 5 * 1024 * 1024
+            ),  # 5 MB default
+            backupCount=config["logging"].get("backup-count", 3),  # keep 3 backups
+            encoding="utf-8",
+        )
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+        )
+        root.addHandler(handler)
 
-    mqttc = ResilientMQTT(
-        host=config["mqtt"]["host"],
-        port=config["mqtt"]["port"],
-        user=config["mqtt"]["user"],
-        password=config["mqtt"]["password"],
-    )
+        mqtt = ResilientMQTT(
+            host=config["mqtt"]["host"],
+            port=config["mqtt"]["port"],
+            user=config["mqtt"]["user"],
+            password=config["mqtt"]["password"],
+        )
 
-    alarm_panel = DxPanel(
-        config["serial"]["device"],
-        config["serial"]["baud_rate"],
-        config["serial"]["zones"],
-    )
+        # USB serial '/dev/ttyUSB0'
+        # UART 0 serial '/dev/serial0'
+        alarm_panel = DxPanel(
+            config["serial"]["device"],
+            config["serial"]["baud_rate"],
+            config["serial"]["zones"],
+        )
 
-    alarm_task = asyncio.create_task(alarm_loop(alarm_panel))
-    monitor_task = asyncio.create_task(monitor_loop(mqttc, alarm_panel))
-    state_changed_task = asyncio.create_task(state_changed_loop(mqttc, alarm_panel))
+        alarm_task = asyncio.create_task(alarm_loop(alarm_panel))
+        monitor_task = asyncio.create_task(monitor_loop(mqtt, alarm_panel))
+        state_changed_task = asyncio.create_task(state_changed_loop(mqtt, alarm_panel))
 
-    await asyncio.wait([alarm_task, monitor_task, state_changed_task])
+        # Loop forever
+        await asyncio.wait([alarm_task, monitor_task, state_changed_task])
+    except Exception as e:
+        logging.error("Error at %s", exc_info=e)
+    finally:
+        logger.debug("All tasks have completed")
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
         asyncio.run(asyncio.sleep(5))
-    except Exception:
-        logger.exception("Fatal error")
+    except Exception as ex:
+        logger.error(f"Exec error: '{ex}'")

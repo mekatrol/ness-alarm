@@ -55,7 +55,7 @@ class DxPanel:
 
         # Create zones
         for i in range(zone_count):
-            self.zones.append(AlarmZone(0, i + 1, f"Zone { i + 1 }"))
+            self.zones.append(AlarmZone(0, i + 1, f"Zone {i + 1}"))
 
     def read_and_clear_state_change(self) -> bool:
         state_changed = self.state_changed
@@ -123,10 +123,10 @@ class DxPanel:
         message_type = int(message[MP_MESSAGE_TYPE_BEGIN:MP_MESSAGE_TYPE_END], 16)
 
         if message_type == MT_SYSTEM_STATUS or message_type == MT_USER_INTERFACE:
-            return [message_type, self.event_checksum(message)]
+            return (message_type, self.event_checksum(message))
 
         # Unknown message type so just return zero checksum
-        return [MT_UNKNOWN, 0x00]
+        return (MT_UNKNOWN, 0x00)
 
     async def loop(self):
         while True:
@@ -174,13 +174,17 @@ class DxPanel:
                         message[MP_MESSAGE_EVENT_BEGIN:MP_MESSAGE_EVENT_END], 16
                     )
                     area = int(message[MP_MESSAGE_AREA_BEGIN:MP_MESSAGE_AREA_END], 16)
-                    zone_index = int(message[MP_MESSAGE_ZONE_BEGIN:MP_MESSAGE_ZONE_END], 16)
+                    zone_index = int(
+                        message[MP_MESSAGE_ZONE_BEGIN:MP_MESSAGE_ZONE_END], 16
+                    )
 
                     # Update valid zones
-                    if zone_index > 0 and zone_index <= len(self.zones):                        
+                    if zone_index > 0 and zone_index <= len(self.zones):
                         zone = self.zones[zone_index - 1]
                         if zone.state != state:
-                            self.logger.debug(f"Zone '{zone.name}' changed to '{self.event_type_name(state)}' from '{self.event_type_name(zone.state)}'")
+                            self.logger.debug(
+                                f"Zone '{zone.name}' changed to '{self.event_type_name(state)}' from '{self.event_type_name(zone.state)}'"
+                            )
                             # Signal that state changed
                             self.state_changed = True
 

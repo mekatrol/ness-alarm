@@ -18,6 +18,7 @@ MQTT_TOPIC_STATUS_ALARMED = "ness/status/alarmed_status"
 MQTT_TOPIC_STATUS_ZONE = "ness/status/{zone}"
 
 
+<<<<<<< HEAD
 class ResilientMQTT:
     def __init__(
         self,
@@ -164,10 +165,17 @@ def post_mqtt_zone_status(mqttc: ResilientMQTT, area: int, zone: int, event: str
     mqttc.publish(
         f"{MQTT_TOPIC_STATUS_ZONE.format(zone=zone)}",
         f'{{"type":"status","area":{area},"zone":{zone},"event":"{event}"}}',
+=======
+def post_mqtt_zone_status(mqttc: mqtt.Client, area: int, zone: int, event: str):
+    msg_info = mqttc.publish(
+        f"ness/status/{zone}",
+        f'{{ "type": "status", "area": {area}, "zone": {zone}, "event": "{ event }" }}',
+>>>>>>> 113f76a38b5d440b8edb6bcaabc049e93a599f1b
         qos=1,
     )
 
 
+<<<<<<< HEAD
 def post_mqtt_armed_status(mqttc: ResilientMQTT, event: str):
     mqttc.publish(
         MQTT_TOPIC_STATUS_ARMED,
@@ -201,6 +209,62 @@ async def state_changed_loop(mqttc: ResilientMQTT, alarm_panel: DxPanel):
 async def monitor_loop(mqttc: ResilientMQTT, alarm_panel: DxPanel):
     while True:
         post_alarm_update(mqttc, alarm_panel)
+=======
+def post_mqtt_armed_status(mqttc: mqtt.Client, event: str):
+    msg_info = mqttc.publish(
+        f"ness/status/armed_status",
+        f'{{ "type": "status", "event": "{ event }" }}',
+        qos=1,
+    )
+    unacked_publish = set()
+    unacked_publish.add(msg_info.mid)
+    msg_info.wait_for_publish()
+    
+def post_mqtt_alarmed_status(mqttc: mqtt.Client, event: str):
+    msg_info = mqttc.publish(
+        f"ness/status/alarmed_status",
+        f'{{ "type": "status", "event": "{ event }" }}',
+        qos=1,
+    )
+    unacked_publish = set()
+    unacked_publish.add(msg_info.mid)
+    msg_info.wait_for_publish()
+
+def post_alarm_update(mqtt: mqtt.Client, alarm_panel: DxPanel):
+    event = "unarmed"
+    if alarm_panel.armed == True:
+        event = "armed"
+    
+    post_mqtt_armed_status(mqtt, event)
+
+    event = "notalarmed"
+    if alarm_panel.alarmed_state() == True:
+        event = "alarmed"
+    
+    post_mqtt_alarmed_status(mqtt, event)
+
+    for zone in alarm_panel.zones:
+        event_type_name = alarm_panel.event_type_name(zone.state)
+        post_mqtt_zone_status(mqtt, zone.area, zone.number, event_type_name)
+
+
+# Post state change events as soon as they occur
+async def state_changed_loop(mqtt: mqtt.Client, alarm_panel: DxPanel):
+    while True:
+        if alarm_panel.read_and_clear_state_change():
+            post_alarm_update(mqtt, alarm_panel)
+
+        # Only sleep for 100 ms
+        await asyncio.sleep(0.1)
+
+
+# Post state change events periodically
+async def monitor_loop(mqtt: mqtt.Client, alarm_panel: DxPanel):
+    while True:
+        post_alarm_update(mqtt, alarm_panel)
+
+        # This is just a keep alive message so can sleep for 10 seconds
+>>>>>>> 113f76a38b5d440b8edb6bcaabc049e93a599f1b
         await asyncio.sleep(10)
 
 
